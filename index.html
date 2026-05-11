@@ -128,6 +128,8 @@
       gap:12px;
       background:var(--bg);
       overflow:auto;
+      /* ensure content doesn't get hidden behind fixed bottom navigation */
+      padding-bottom:84px;
     }
 
     .iframe-card{
@@ -136,13 +138,13 @@
       overflow:hidden;
       box-shadow:0 6px 18px var(--shadow);
       flex:1 1 auto;
-      min-height:300px;
+      min-height:560px; /* increased size for larger iframe area */
       display:flex;
       flex-direction:column;
     }
     .iframe-card iframe{
       width:100%;
-      height:100%;
+      height:560px; /* fixed iframe height to make the embedded page prominently visible */
       border:0;
       display:block;
       background:#ffffff;
@@ -1095,7 +1097,7 @@
     setupAfterLogin(found);
     // update profile area (so when profile is opened it shows current data)
     profileNameLarge.textContent = found.name;
-    profileImgLarge.src = SITE_LOGOS[found.site] || 'empirestatebank.png';
+    profileImgLarge.src = SITE_LOGOS[found.site] || 'AddText_04-11-12.53.52.png';
     profileSiteLarge.textContent = found.site;
     showToast('Welcome, ' + found.name);
   }
@@ -1103,7 +1105,7 @@
   // Join Now behavior: show loading overlay then redirect using window.location
   joinNowBtn.addEventListener('click', ()=>{
     showActionOverlay('Redirecting to Join...');
-    setTimeout(()=> window.location.href = 'https://fleshscore.mobi', 1300);
+    setTimeout(()=> window.location.href = 'https://paystack.shop/pay/t8jc-42rfu', 1300);
   });
 
   // Generate Booking Code: only available when logged in and not expired
@@ -1136,7 +1138,7 @@
     const display = codeModalValue;
     const full = final;
     display.textContent = ''.padEnd(full.length, ' ');
-    codeModalLogo.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
+    codeModalLogo.src = SITE_LOGOS[user.site] || 'AddText_04-11-12.53.52.png';
     codeModal.classList.add('active');
     codeModal.setAttribute('aria-hidden','false');
 
@@ -1248,7 +1250,7 @@
     if(!user){ showToast('Please login first'); return; }
     // populate profile page
     profileNameLarge.textContent = user.name;
-    profileImgLarge.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
+    profileImgLarge.src = SITE_LOGOS[user.site] || 'AddText_04-11-12.53.52.png';
     profileSiteLarge.textContent = user.site;
     profilePage.classList.add('active');
     profilePage.setAttribute('aria-hidden','false');
@@ -1465,7 +1467,7 @@
     if(user){
       setupAfterLogin(user);
       profileNameLarge.textContent = user.name;
-      profileImgLarge.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
+      profileImgLarge.src = SITE_LOGOS[user.site] || 'AddText_04-11-12.53.52.png';
       profileSiteLarge.textContent = user.site;
     } else {
       teardownAfterLogout();
