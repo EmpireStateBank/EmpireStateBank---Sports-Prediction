@@ -464,17 +464,38 @@
     }
     .hidden{ display:none; }
 
-    /* initial loader logo animation */
+    /* initial loader logo animation
+       Changed to a gentle pulse + subtle spin animation for a more modern feel.
+       - slightly scales (pulse)
+       - small rotation swing
+       - fades opacity to add depth
+    */
     .initial-logo{
       width:120px;
       height:120px;
       object-fit:contain;
-      animation:logoFloat 1600ms ease-in-out infinite;
+      transform-origin:center;
+      will-change:transform, opacity;
+      animation:logoPulseSpin 1800ms ease-in-out infinite;
     }
-    @keyframes logoFloat {
-      0% { transform:translateY(0) scale(1); }
-      50% { transform:translateY(-8px) scale(1.06) rotate(-3deg); }
-      100% { transform:translateY(0) scale(1); }
+    @keyframes logoPulseSpin {
+      0% {
+        transform: scale(0.92) rotate(0deg);
+        opacity: 0.75;
+        filter: drop-shadow(0 10px 22px rgba(0,0,0,0.55));
+      }
+      35% {
+        transform: scale(1.06) rotate(8deg);
+        opacity: 1;
+      }
+      65% {
+        transform: scale(1.02) rotate(-6deg);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(0.92) rotate(0deg);
+        opacity: 0.75;
+      }
     }
 
     .loader-spinner{
@@ -748,6 +769,10 @@
               </div>
               <div style="text-align:right;color:var(--muted);margin-top:6px;" id="profileExpiry">Expires: --</div>
             </div>
+
+            <!-- Added profile-visible subscribe button so expired users see CTA when profile is open -->
+            <button id="profileSubscribeBtn" class="subscribe-btn">Subscribe — <svg style="vertical-align:middle" width="16" height="16" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.58 2 4 5.58 4 10c0 4.97 6.34 9.8 7.14 10.47.3.25.7.25 1 0C13.66 19.8 20 14.97 20 10c0-4.42-3.58-8-8-8zm1 11h-2V7h2v6z"/></svg></button>
+
           </div>
 
           <button id="profileSettingsBtn" class="btn" style="margin-top:12px;width:100%;">Settings</button>
@@ -760,7 +785,7 @@
           <div style="font-weight:700;margin-bottom:8px;">Empire Loyalty</div>
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-weight:700">Empire Loyalty</div>
-            <button id="profileLoyaltyBtn" class="btn" style="background:var(--green);border:0;color:#fff;">Earn Rewards</button>
+            <button id="profileLoyaltyBtn" class="btn" style="background:var(--green);border:0;color=#fff;">Earn Rewards</button>
           </div>
         </div>
 
@@ -857,6 +882,7 @@
   const profileExpiry = $('#profileExpiry');
   const profileProgressInner = $('#profileProgressInner');
   const subscribeBtn = $('#subscribeBtn');
+  const profileSubscribeBtn = $('#profileSubscribeBtn'); // newly added profile CTA
   const progressInner = $('#progressInner');
   const expiryText = $('#expiryText');
   const userNameEl = $('#userName');
@@ -902,28 +928,35 @@
   const CUSTOMER_SERVICE_EMAIL = 'empirevirtual99@gmail.com';
   const CUSTOMER_SERVICE_MAILTO = 'mailto:' + CUSTOMER_SERVICE_EMAIL;
 
-  const SAMPLE_USERS_KEY = "esb_users_v1";
-  const SESSION_KEY = "esb_session_v1";
+  // USERS_MAP: single place to edit id and PIN together.
+  // Each key is "id|PIN" (edit here to add/edit PINs). Values are user metadata.
+  // PINs remain only inside these keys (not persisted anywhere).
+  const USERS_MAP = {
+    // Format: 'id|PIN': { name, site, expiration }
+    'daniel|2255':  { name: 'Daniel Johnson',  site: 'SportyBet', expiration: '2026-04-24T20:24:20Z' },
+    'michael|1789': { name: 'Michael James',  site: 'BetKing',   expiration: '2026-06-01T12:00:00Z' },
+    'samuel|3972':  { name: 'Samuel David',   site: 'Bet9ja',    expiration: '2026-05-15T08:30:00Z' }
+  };
 
-  // Helpers for localStorage users/session
+  // In-memory users and session (NO localStorage; cleared on refresh)
+  // IN_MEMORY_USERS will be built from USERS_MAP but the user objects will NOT include the PIN.
+  let IN_MEMORY_USERS = [];
+  let IN_MEMORY_SESSION = null;
+
+  // Helpers for in-memory users/session (no persistence)
   function seedSampleUsersIfNeeded(){
-    if(!localStorage.getItem(SAMPLE_USERS_KEY)){
-      // Provide explicit ISO UTC expiration strings you can edit.
-      // Replace these with your desired UTC timestamps (YYYY-MM-DDTHH:mm:ssZ)
-      const samples = [
-        // Example using the ISO UTC format requested by you:
-        { id: 'daniel', name: 'Daniel Johnson', pin:'1234', site:'SportyBet', expiration: '2026-04-24T20:24:20Z' },
-        { id: 'michael', name: 'Michael James', pin:'3572', site:'BetKing', expiration: '2026-06-01T12:00:00Z' },
-        { id: 'samuel', name: 'Samuel David', pin:'2222', site:'Bet9ja', expiration: '2026-05-15T08:30:00Z' }
-      ];
-      localStorage.setItem(SAMPLE_USERS_KEY, JSON.stringify(samples));
-    }
+    // Build IN_MEMORY_USERS from USERS_MAP keys. PIN is kept only in USERS_MAP key.
+    IN_MEMORY_USERS = Object.keys(USERS_MAP).map(k => {
+      const [id] = k.split('|');
+      const meta = USERS_MAP[k];
+      return { id, name: meta.name, site: meta.site, expiration: meta.expiration };
+    });
   }
-  function getUsers(){ try { return JSON.parse(localStorage.getItem(SAMPLE_USERS_KEY) || "[]"); } catch(e){ return []; } }
-  function saveUsers(users){ localStorage.setItem(SAMPLE_USERS_KEY, JSON.stringify(users)); }
-  function saveSession(userId){ localStorage.setItem(SESSION_KEY, JSON.stringify({userId, startedAt: Date.now()})); }
-  function clearSession(){ localStorage.removeItem(SESSION_KEY); }
-  function getSession(){ try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch(e){ return null; } }
+  function getUsers(){ return IN_MEMORY_USERS.slice(); } // return a shallow copy
+  function saveUsers(users){ IN_MEMORY_USERS = Array.isArray(users) ? users.slice() : []; }
+  function saveSession(userId){ IN_MEMORY_SESSION = { userId, startedAt: Date.now() }; }
+  function clearSession(){ IN_MEMORY_SESSION = null; }
+  function getSession(){ return IN_MEMORY_SESSION; }
   function currentUser(){ const s = getSession(); if(!s) return null; return getUsers().find(u=>u.id===s.userId) || null; }
 
   // UI helpers
@@ -959,7 +992,7 @@
     const expirationMs = parseExpirationToMs(expiration);
     const now = Date.now();
     const totalMs = PLAN_DAYS*24*60*60*1000;
-    if(isNaN(expirationMs)) return { percent: 0, remainingMs: 0 };
+    if(isNaN(expirationMs)) return { percent: 0, remainingMs: 0, expirationMs: NaN };
     const remainingMs = Math.max(0, expirationMs - now);
     const percent = Math.round((remainingMs / totalMs) * 100);
     return { percent: Math.max(0, Math.min(100, percent)), remainingMs, expirationMs };
@@ -979,18 +1012,21 @@
       const { percent, remainingMs, expirationMs } = percentRemainingFromExpiration(user.expiration);
 
       if(remainingMs <= 0){
-        // expired
+        // expired — show 0% (red) so progress visually indicates no remaining time
         headerPercent.textContent = 'Expired';
         headerPercent.title = 'Subscription expired (UTC)';
         subscribeBtn.classList.add('visible');
         subscribeBtn.style.display = 'block';
-        progressInner.style.width = '100%';
+        if(profileSubscribeBtn) { profileSubscribeBtn.classList.add('visible'); profileSubscribeBtn.style.display = 'block'; }
+        progressInner.style.width = '0%';
         progressInner.style.background = 'var(--red)';
         expiryText.textContent = 'Subscription Expired';
-        profileProgressInner.style.width = '100%';
+        profileProgressInner.style.width = '0%';
         profileProgressInner.style.background = 'var(--red)';
         profileExpiry.textContent = 'Expired';
         generateBtn.setAttribute('disabled','disabled');
+        // notify user when they sign in with expired subscription
+        showToast('Your subscription has expired', 3500);
       } else {
         headerPercent.textContent = percent + '%';
         headerPercent.title = remainingMs > 0 && !isNaN(expirationMs) ? ('Subscription expires (UTC): ' + new Date(expirationMs).toUTCString()) : 'Subscription progress';
@@ -1002,6 +1038,7 @@
         profileExpiry.textContent = 'Expires: ' + new Date(expirationMs).toUTCString().replace('GMT','UTC');
         subscribeBtn.classList.remove('visible');
         subscribeBtn.style.display = 'none';
+        if(profileSubscribeBtn){ profileSubscribeBtn.classList.remove('visible'); profileSubscribeBtn.style.display = 'none'; }
         generateBtn.removeAttribute('disabled');
       }
     }
@@ -1021,6 +1058,7 @@
     footerBar.classList.remove('hidden');
     generateBtn.classList.remove('visible');
     generateBtn.removeAttribute('disabled');
+    if(profileSubscribeBtn){ profileSubscribeBtn.classList.remove('visible'); profileSubscribeBtn.style.display = 'none'; }
     if(headerProgressInterval) { clearInterval(headerProgressInterval); headerProgressInterval=null; }
   }
 
@@ -1035,10 +1073,23 @@
   function attemptLogin(){
     const pin = pinInput.value.trim();
     if(!/^\d{4}$/.test(pin)) { showToast('Enter 4 digit PIN'); return; }
-    const users = getUsers();
-    const found = users.find(u => u.pin === pin);
-    if(!found) { showToast('Invalid PIN'); return; }
-    // Save session but do NOT open dashboard automatically
+
+    // Find the USERS_MAP key that contains this PIN: key format is "id|PIN"
+    const foundKey = Object.keys(USERS_MAP).find(k => {
+      const parts = k.split('|');
+      return parts.length > 1 && parts[1] === pin;
+    });
+
+    if(!foundKey){
+      showToast('Invalid PIN');
+      return;
+    }
+
+    const [id] = foundKey.split('|');
+    const meta = USERS_MAP[foundKey];
+    const found = { id, name: meta.name, site: meta.site, expiration: meta.expiration };
+
+    // Save session in-memory only (do NOT persist)
     saveSession(found.id);
     closeLogin();
     setupAfterLogin(found);
@@ -1068,6 +1119,7 @@
       showToast('Your subscription has expired');
       subscribeBtn.classList.add('visible');
       subscribeBtn.style.display = 'block';
+      if(profileSubscribeBtn) { profileSubscribeBtn.classList.add('visible'); profileSubscribeBtn.style.display = 'block'; }
       generateBtn.setAttribute('disabled','disabled');
       return;
     }
@@ -1207,14 +1259,14 @@
   function updateProfileProgress(user){
     const { percent, remainingMs, expirationMs } = percentRemainingFromExpiration(user.expiration);
     if(remainingMs <= 0){
-      profileProgressInner.style.width = '100%';
+      profileProgressInner.style.width = '0%';
       profileProgressInner.style.background = 'var(--red)';
       profileExpiry.textContent = 'Expired';
-      progressInner.style.width = '100%';
+      progressInner.style.width = '0%';
       progressInner.style.background = 'var(--red)';
       expiryText.textContent = 'Subscription Expired';
-      subscribeBtn.classList.add('visible');
-      subscribeBtn.style.display = 'block';
+      if(subscribeBtn){ subscribeBtn.classList.add('visible'); subscribeBtn.style.display = 'block'; }
+      if(profileSubscribeBtn){ profileSubscribeBtn.classList.add('visible'); profileSubscribeBtn.style.display = 'block'; }
       generateBtn.setAttribute('disabled','disabled');
       headerPercent.textContent = 'Expired';
       headerPercent.title = 'Subscription expired (UTC)';
@@ -1225,8 +1277,8 @@
       progressInner.style.width = percent + '%';
       progressInner.style.background = 'var(--green)';
       expiryText.textContent = 'Expires: ' + new Date(expirationMs).toUTCString().replace('GMT','UTC');
-      subscribeBtn.classList.remove('visible');
-      subscribeBtn.style.display = 'none';
+      if(subscribeBtn){ subscribeBtn.classList.remove('visible'); subscribeBtn.style.display = 'none'; }
+      if(profileSubscribeBtn){ profileSubscribeBtn.classList.remove('visible'); profileSubscribeBtn.style.display = 'none'; }
       generateBtn.removeAttribute('disabled');
     }
   }
@@ -1256,6 +1308,17 @@
       showToast('Referral message copied');
     }
   });
+
+  // Add handler for the profile-visible subscribe button (same behaviour as dashboard subscribe)
+  if(profileSubscribeBtn){
+    profileSubscribeBtn.addEventListener('click', ()=> {
+      showActionOverlay('Opening subscription...');
+      setTimeout(()=>{
+        try { window.open(SUBSCRIPTION_LINK, '_blank', 'noopener,noreferrer'); } catch(e) { window.location.href = SUBSCRIPTION_LINK; }
+        setTimeout(()=> hideActionOverlay(), 800);
+      }, 300);
+    });
+  }
 
   // Utility to open external links with overlay then open link
   function openWithLoader(url){
@@ -1396,7 +1459,7 @@
   seedSampleUsersIfNeeded();
   startInitialLoader();
 
-  // After initial loader, if session exists, set up logged-in UI but DO NOT open dashboard
+  // After initial loader, if session exists in-memory, set up logged-in UI but DO NOT open dashboard
   setTimeout(()=> {
     const user = currentUser();
     if(user){
