@@ -375,7 +375,7 @@
           <!-- image removed per request -->
           <div style="display:flex;gap:8px;align-items:center">
             <div style="font-size:12px;color:var(--muted)">Plan</div>
-            <div style="font-weight:700">1 Month</div>
+            <div id="previewPlanName" style="font-weight:700">--</div>
           </div>
           <!-- show small referral summary in preview -->
           <div id="dashboardReferralPreview" style="font-size:12px;color:var(--muted); align-self:center;">Referral: <span id="dashboardReferralCodePreview">--</span></div>
@@ -414,7 +414,7 @@
 
           <div class="plan-row">
             <div>Total Plan</div>
-            <div>1 Month</div>
+            <div id="dashboardPlanName">--</div>
           </div>
 
           <button id="subscribeBtn" class="subscribe-btn">Subscribe — <svg style="vertical-align:middle" width="16" height="16" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.58 2 4 5.58 4 10c0 4.97 6.34 9.8 7.14 10.47.3.25.7.25 1 0C13.66 19.8 20 14.97 20 10c0-4.42-3.58-8-8-8zm1 11h-2V7h2v6z"/></svg></button>
@@ -524,7 +524,7 @@
                 <div id="profileProgressInner" class="progress-inner" style="width:0%; background:var(--green);"></div>
               </div>
               <div style="display:flex;justify-content:space-between;margin-top:6px;color:var(--muted);font-size:13px;">
-                <div>Total Plan</div><div>1 Month</div>
+                <div>Total Plan</div><div id="profilePlanName">--</div>
               </div>
               <div style="text-align:right;color:var(--muted);margin-top:6px;" id="profileExpiry">Expires: --</div>
             </div>
@@ -655,6 +655,11 @@
   const actionOverlayText = $('#actionOverlayText');
   const dashboardSection = $('#dashboard');
 
+  // New plan/name UI elements
+  const previewPlanNameEl = $('#previewPlanName');
+  const dashboardPlanNameEl = $('#dashboardPlanName');
+  const profilePlanNameEl = $('#profilePlanName');
+
   // Referral UI elements (code only)
   const profileReferralCodeEl = $('#profileReferralCode');
   const dashboardReferralCodeEl = $('#dashboardReferralCode');
@@ -672,7 +677,7 @@
   const profileNotificationCenter = $('#profileNotificationCenter');
 
   // App state
-  const PLAN_DAYS = 30; // 1 month plan reference (used for percent calculation)
+  const DEFAULT_PLAN_DAYS = 30; // default if a user doesn't specify
   const SITE_LOGOS = {
     "SportyBet": "AddText_10-13-10.20.57.png",
     "BetKing": "AddText_10-13-10.22.08.png",
@@ -682,6 +687,13 @@
     "SportyBet": "https://www.sportybet.com/ng/m/code-hub/load-code?source=home",
     "BetKing": "https://m.betking.com/en-ng/sports/book-bet?ic_source=internal&ic_medium=Menu&ic_campaign=NG-MENU-BookBet-Mob&ic_content=MENU-BookBet-mob",
     "Bet9ja": "https://old-mobile.bet9ja.com/Schedina.aspx"
+  };
+
+  // === Fixed / Predefined booking codes per site ===
+  const BOOKING_CODES = {
+    "SportyBet": "SPO-EMPR01",
+    "BetKing":   "BKT-EMPR02",
+    "Bet9ja":    "B9J-EMPR03"
   };
 
   // Provided subscription and contact links
@@ -695,14 +707,16 @@
   const REFERRAL_BASE = 'https://empirestatebank.mssg.me/';
 
   // USERS_MAP: single place to edit id, PIN and referral together.
-  // Each key is "id|PIN". Values are user metadata including referral code.
+  // Each key is "id|PIN". Values are user metadata including referral, planDays and planName.
+  // NOTE: planDays controls the total plan length for percent calculation; planName is the friendly label shown in UI.
   const USERS_MAP = {
-    // Format: 'id|PIN': { name, site, expiration, referral }
-    'daniel|2255':  { name: 'Daniel Johnson',  site: 'SportyBet', expiration: '2026-04-24T20:24:20Z', referral: 'Bot-001' },
-    'michael|1789': { name: 'Michael James',  site: 'BetKing',   expiration: '2026-06-01T12:00:00Z', referral: 'Bot-002' },
-    'samuel|3972':  { name: 'Samuel David',   site: 'Bet9ja',    expiration: '2026-05-15T08:30:00Z', referral: 'Bot-003' },
-    'emmanuel|3572': { name: 'Emmanuel Ekpa',  site: 'Bet9ja',   expiration: '2026-06-25T12:00:00Z', referral: 'Bot-004' },
-    'john|9900': { name: 'John Okon',  site: 'BetKing',   expiration: '2026-07-01T12:00:00Z', referral: 'Bot-005' },
+    // Format: 'id|PIN': { name, site, expiration, referral, planDays, planName }
+    // Examples with different total plans:
+    'daniel|2255':   { name: 'Daniel Johnson',  site: 'SportyBet', expiration: '2026-04-24T20:24:20Z', referral: 'Bot-001', planDays: 30,  planName: '1 Month' },
+    'michael|1789':  { name: 'Michael James',   site: 'BetKing',   expiration: '2026-06-01T12:00:00Z', referral: 'Bot-002', planDays: 90,  planName: '3 Months' },
+    'samuel|3972':   { name: 'Samuel David',    site: 'Bet9ja',    expiration: '2026-05-15T08:30:00Z', referral: 'Bot-003', planDays: 7,   planName: '1 Week' },
+    'emmanuel|3572': { name: 'Emmanuel Ekpa',   site: 'Bet9ja',    expiration: '2026-06-25T12:00:00Z', referral: 'Bot-004', planDays: 180, planName: '6 Months' },
+    'john|9900':     { name: 'John Okon',       site: 'BetKing',   expiration: '2026-07-01T12:00:00Z', referral: 'Bot-005', planDays: 30,  planName: '1 Month' },
   };
 
   // In-memory users and session (NO localStorage; cleared on refresh)
@@ -710,11 +724,19 @@
   let IN_MEMORY_SESSION = null;
 
   function seedSampleUsersIfNeeded(){
-    // Build IN_MEMORY_USERS from USERS_MAP keys. Include referral.
+    // Build IN_MEMORY_USERS from USERS_MAP keys. Include referral and plan metadata.
     IN_MEMORY_USERS = Object.keys(USERS_MAP).map(k => {
       const [id] = k.split('|');
       const meta = USERS_MAP[k];
-      return { id, name: meta.name, site: meta.site, expiration: meta.expiration, referral: meta.referral || '' };
+      return {
+        id,
+        name: meta.name,
+        site: meta.site,
+        expiration: meta.expiration,
+        referral: meta.referral || '',
+        planDays: typeof meta.planDays === 'number' ? meta.planDays : DEFAULT_PLAN_DAYS,
+        planName: meta.planName || `${DEFAULT_PLAN_DAYS} Days`
+      };
     });
   }
   function getUsers(){ return IN_MEMORY_USERS.slice(); } // return a shallow copy
@@ -752,11 +774,12 @@
     return isNaN(ms) ? NaN : ms;
   }
 
-  // Utility: compute percent remaining (0..100) from now until expiration using PLAN_DAYS total plan duration.
-  function percentRemainingFromExpiration(expiration){
+  // Utility: compute percent remaining (0..100) from now until expiration using planDays total plan duration.
+  // Accepts planDays so each user can have a different total plan length.
+  function percentRemainingFromExpiration(expiration, planDays = DEFAULT_PLAN_DAYS){
     const expirationMs = parseExpirationToMs(expiration);
     const now = Date.now();
-    const totalMs = PLAN_DAYS*24*60*60*1000;
+    const totalMs = (planDays || DEFAULT_PLAN_DAYS) * 24 * 60 * 60 * 1000;
     if(isNaN(expirationMs)) return { percent: 0, remainingMs: 0, expirationMs: NaN };
     const remainingMs = Math.max(0, expirationMs - now);
     const percent = Math.round((remainingMs / totalMs) * 100);
@@ -773,13 +796,16 @@
     // show generate button
     generateBtn.classList.add('visible');
 
-    // reflect referral on preview immediately
+    // reflect referral & plan on preview immediately
     if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = user.referral || '--';
+    if(previewPlanNameEl) previewPlanNameEl.textContent = user.planName || '--';
     if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = user.referral || '--';
     if(profileReferralCodeEl) profileReferralCodeEl.textContent = user.referral || '--';
+    if(dashboardPlanNameEl) dashboardPlanNameEl.textContent = user.planName || '--';
+    if(profilePlanNameEl) profilePlanNameEl.textContent = user.planName || '--';
 
     function updateHeaderPercent(){
-      const { percent, remainingMs, expirationMs } = percentRemainingFromExpiration(user.expiration);
+      const { percent, remainingMs, expirationMs } = percentRemainingFromExpiration(user.expiration, user.planDays);
 
       if(remainingMs <= 0){
         // expired — show 0% (red) so progress visually indicates no remaining time
@@ -788,8 +814,8 @@
         subscribeBtn.classList.add('visible');
         subscribeBtn.style.display = 'block';
         if(profileSubscribeBtn) { profileSubscribeBtn.classList.add('visible'); profileSubscribeBtn.style.display = 'block'; }
-        progressInner.style.width = '0%';
-        progressInner.style.background = 'var(--red)';
+        const progInner = $('#progressInner');
+        if(progInner) { progInner.style.width = '0%'; progInner.style.background = 'var(--red)'; }
         expiryText.textContent = 'Subscription Expired';
         profileProgressInner.style.width = '0%';
         profileProgressInner.style.background = 'var(--red)';
@@ -800,8 +826,8 @@
       } else {
         headerPercent.textContent = percent + '%';
         headerPercent.title = remainingMs > 0 && !isNaN(expirationMs) ? ('Subscription expires (UTC): ' + new Date(expirationMs).toUTCString()) : 'Subscription progress';
-        progressInner.style.width = percent + '%';
-        progressInner.style.background = 'var(--green)';
+        const progInner = $('#progressInner');
+        if(progInner) { progInner.style.width = percent + '%'; progInner.style.background = 'var(--green)'; }
         expiryText.textContent = 'Expires: ' + new Date(expirationMs).toUTCString().replace('GMT','UTC');
         profileProgressInner.style.width = percent + '%';
         profileProgressInner.style.background = 'var(--green)';
@@ -830,10 +856,13 @@
     generateBtn.removeAttribute('disabled');
     if(profileSubscribeBtn){ profileSubscribeBtn.classList.remove('visible'); profileSubscribeBtn.style.display = 'none'; }
     if(headerProgressInterval) { clearInterval(headerProgressInterval); headerProgressInterval=null; }
-    // clear referral UI
+    // clear referral & plan UI
     if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = '--';
+    if(previewPlanNameEl) previewPlanNameEl.textContent = '--';
     if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = '--';
+    if(dashboardPlanNameEl) dashboardPlanNameEl.textContent = '--';
     if(profileReferralCodeEl) profileReferralCodeEl.textContent = '--';
+    if(profilePlanNameEl) profilePlanNameEl.textContent = '--';
   }
 
   // Login flow: do not open dashboard; just set session and header indicator
@@ -861,8 +890,16 @@
 
     const [id] = foundKey.split('|');
     const meta = USERS_MAP[foundKey];
-    // include referral in the found object
-    const found = { id, name: meta.name, site: meta.site, expiration: meta.expiration, referral: meta.referral || '' };
+    // include referral and plan in the found object
+    const found = {
+      id,
+      name: meta.name,
+      site: meta.site,
+      expiration: meta.expiration,
+      referral: meta.referral || '',
+      planDays: typeof meta.planDays === 'number' ? meta.planDays : DEFAULT_PLAN_DAYS,
+      planName: meta.planName || `${DEFAULT_PLAN_DAYS} Days`
+    };
 
     // Save session in-memory only (do NOT persist)
     saveSession(found.id);
@@ -875,6 +912,9 @@
     if(profileReferralCodeEl) profileReferralCodeEl.textContent = found.referral || '--';
     if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = found.referral || '--';
     if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = found.referral || '--';
+    if(previewPlanNameEl) previewPlanNameEl.textContent = found.planName || '--';
+    if(dashboardPlanNameEl) dashboardPlanNameEl.textContent = found.planName || '--';
+    if(profilePlanNameEl) profilePlanNameEl.textContent = found.planName || '--';
     showToast('Welcome, ' + found.name);
   }
 
@@ -907,12 +947,16 @@
   // Code generation logic (targets codeModal)
   async function generateBookingCodeFor(user){
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const sitePrefix = (user.site.match(/[A-Z]/gi) || []).slice(0,3).join('').toUpperCase() || user.site.slice(0,3).toUpperCase();
-    let final = sitePrefix.padEnd(3,'X').slice(0,3) + '-';
-    for(let i=0;i<5;i++) final += chars[Math.floor(Math.random()*chars.length)];
+    // Use predefined booking code for the site; fallback to the original random generator if not found
+    const bookingCode = BOOKING_CODES[user.site] || (function(){
+      const sitePrefix = (user.site.match(/[A-Z]/gi) || []).slice(0,3).join('').toUpperCase() || user.site.slice(0,3).toUpperCase();
+      let final = sitePrefix.padEnd(3,'X').slice(0,3) + '-';
+      for(let i=0;i<5;i++) final += chars[Math.floor(Math.random()*chars.length)];
+      return final;
+    })();
 
     const display = codeModalValue;
-    const full = final;
+    const full = bookingCode;
     display.textContent = ''.padEnd(full.length, ' ');
     codeModalLogo.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
     codeModal.classList.add('active');
@@ -1029,6 +1073,7 @@
     profileImgLarge.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
     profileSiteLarge.textContent = user.site;
     if(profileReferralCodeEl) profileReferralCodeEl.textContent = user.referral || '--';
+    if(profilePlanNameEl) profilePlanNameEl.textContent = user.planName || '--';
     profilePage.classList.add('active');
     profilePage.setAttribute('aria-hidden','false');
     // update progress immediately
@@ -1036,13 +1081,13 @@
   });
 
   function updateProfileProgress(user){
-    const { percent, remainingMs, expirationMs } = percentRemainingFromExpiration(user.expiration);
+    const { percent, remainingMs, expirationMs } = percentRemainingFromExpiration(user.expiration, user.planDays);
     if(remainingMs <= 0){
       profileProgressInner.style.width = '0%';
       profileProgressInner.style.background = 'var(--red)';
       profileExpiry.textContent = 'Expired';
-      progressInner.style.width = '0%';
-      progressInner.style.background = 'var(--red)';
+      const progInner = $('#progressInner');
+      if(progInner) { progInner.style.width = '0%'; progInner.style.background = 'var(--red)'; }
       expiryText.textContent = 'Subscription Expired';
       if(subscribeBtn){ subscribeBtn.classList.add('visible'); subscribeBtn.style.display = 'block'; }
       if(profileSubscribeBtn){ profileSubscribeBtn.classList.add('visible'); profileSubscribeBtn.style.display = 'block'; }
@@ -1053,8 +1098,8 @@
       profileProgressInner.style.width = percent + '%';
       profileProgressInner.style.background = 'var(--green)';
       profileExpiry.textContent = 'Expires: ' + new Date(expirationMs).toUTCString().replace('GMT','UTC');
-      progressInner.style.width = percent + '%';
-      progressInner.style.background = 'var(--green)';
+      const progInner = $('#progressInner');
+      if(progInner) { progInner.style.width = percent + '%'; progInner.style.background = 'var(--green)'; }
       expiryText.textContent = 'Expires: ' + new Date(expirationMs).toUTCString().replace('GMT','UTC');
       if(subscribeBtn){ subscribeBtn.classList.remove('visible'); subscribeBtn.style.display = 'none'; }
       if(profileSubscribeBtn){ profileSubscribeBtn.classList.remove('visible'); profileSubscribeBtn.style.display = 'none'; }
@@ -1251,6 +1296,9 @@
       if(profileReferralCodeEl) profileReferralCodeEl.textContent = user.referral || '--';
       if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = user.referral || '--';
       if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = user.referral || '--';
+      if(previewPlanNameEl) previewPlanNameEl.textContent = user.planName || '--';
+      if(dashboardPlanNameEl) dashboardPlanNameEl.textContent = user.planName || '--';
+      if(profilePlanNameEl) profilePlanNameEl.textContent = user.planName || '--';
     } else {
       teardownAfterLogout();
     }
