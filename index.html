@@ -25,6 +25,7 @@
     }
 
     /* === Base app layout === */
+    /* Disable page-level scrollbars so only iframe scrolls */
     html,body{
       height:100%;
       margin:0;
@@ -34,17 +35,18 @@
       -moz-osx-font-smoothing:grayscale;
       color:var(--text);
       -webkit-tap-highlight-color: transparent;
+      overflow: hidden; /* prevent body scroll */
     }
 
     /* Container sized for mobile-first */
     .app {
       max-width:412px; /* typical Android phone viewport */
       margin:0 auto;
-      min-height:100vh;
+      height:100vh;
       position:relative;
       display:flex;
       flex-direction:column;
-      overflow:hidden;
+      overflow:hidden; /* ensure no scrolling on app container */
       background:var(--bg);
     }
 
@@ -58,6 +60,7 @@
       padding:10px;
       box-sizing:border-box;
       gap:8px;
+      flex: 0 0 72px;
     }
     .logo-wrap{
       display:flex;
@@ -93,16 +96,8 @@
       background:transparent;
       color:#fff;
     }
-    .btn.join {
-      background:#ffffff;
-      color:var(--header);
-    }
-    .btn.login {
-      background:var(--header);
-      color:#ffffff;
-      border:2px solid #ffffff;
-      opacity:1;
-    }
+    .btn.join { background:#ffffff; color:var(--header); }
+    .btn.login { background:var(--header); color:#ffffff; border:2px solid #ffffff; opacity:1; }
 
     /* header percent pill (shown when logged in) */
     .header-percent {
@@ -118,18 +113,17 @@
       text-align:center;
     }
 
-    /* MAIN content area with iframe */
+    /* MAIN content area with iframe
+       Make main non-scrollable — iframe will be the only scrolling element */
     main.content {
       padding:12px;
       box-sizing:border-box;
-      flex:1 1 auto;
       display:flex;
       flex-direction:column;
       gap:12px;
       background:var(--bg);
-      overflow:auto;
-      /* ensure content doesn't get hidden behind fixed bottom navigation */
-      padding-bottom:84px;
+      overflow: hidden; /* disable main scrolling */
+      flex: 1 1 auto;
     }
 
     .iframe-card{
@@ -137,17 +131,20 @@
       border-radius:16px;
       overflow:hidden;
       box-shadow:0 6px 18px var(--shadow);
-      flex:1 1 auto;
-      min-height:560px; /* increased size for larger iframe area */
+      /* size the iframe to exactly the available area between header and bottom nav */
       display:flex;
       flex-direction:column;
+      height: calc(100vh - 72px - 64px - 24px); /* viewport minus header (72) minus bottom-nav (64) minus main padding (12 top + 12 bottom) */
+      min-height:220px;
     }
     .iframe-card iframe{
       width:100%;
-      height:560px; /* fixed iframe height to make the embedded page prominently visible */
+      height:100%;
       border:0;
       display:block;
       background:#ffffff;
+      /* allow iframe content to be scrolled internally */
+      overflow:auto;
     }
 
     /* Footer bar (small) above bottom navigation */
@@ -186,6 +183,7 @@
       width:100%;
       max-width:412px;
       border-top:1px solid #111111;
+      flex: 0 0 64px;
     }
     .nav-left,.nav-right{ display:flex; align-items:center; gap:12px; }
     .generate-btn{
@@ -263,6 +261,7 @@
       padding:12px;
       box-sizing:border-box;
       min-height:100vh;
+      overflow:auto;
     }
     .dashboard.active{ display:flex; }
 
@@ -273,292 +272,61 @@
       box-sizing:border-box;
       box-shadow:0 6px 18px var(--shadow);
     }
-    .top-row{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      justify-content:space-between;
-    }
-    .profile-ico{
-      width:64px;height:64px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0;
-      overflow:hidden;
-    }
-    .profile-ico img{ width:56px; height:56px; object-fit:contain; border-radius:50%; }
 
-    .user-meta{
-      flex:1;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      padding-right:8px;
-    }
+    /* ... rest of styles unchanged ... */
+    .top-row{ display:flex; align-items:center; gap:12px; justify-content:space-between; }
+    .profile-ico{ width:64px;height:64px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0; overflow:hidden; }
+    .profile-ico img{ width:56px; height:56px; object-fit:contain; border-radius:50%; }
+    .user-meta{ flex:1; display:flex; flex-direction:column; gap:4px; padding-right:8px; }
     .user-name{ font-size:18px; font-weight:700; color:var(--text); }
     .progress-title{ font-size:13px; color:var(--muted); font-weight:500; }
-
     .icon-btn{ width:44px;height:44px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer; box-shadow:0 6px 18px var(--shadow); }
-
-    /* small back button on dashboard */
     .back-btn { margin-right:8px; display:flex; align-items:center; gap:8px; cursor:pointer; border-radius:10px; padding:8px; background:var(--card); box-shadow:0 6px 18px var(--shadow); }
     .back-btn svg{ width:18px; height:18px; fill:#fff; }
-
-    /* Progress bar */
     .progress-wrap{ display:flex; gap:12px; align-items:center; margin-top:8px; }
-    .progress-bar{
-      background:#2d333a;
-      flex:1;
-      height:18px;
-      border-radius:10px;
-      overflow:hidden;
-      box-shadow:0 6px 18px var(--shadow);
-    }
-    .progress-inner{
-      height:100%;
-      width:50%;
-      background:var(--green);
-      transition:width 0.6s ease;
-      border-radius:10px;
-    }
+    .progress-bar{ background:#2d333a; flex:1; height:18px; border-radius:10px; overflow:hidden; box-shadow:0 6px 18px var(--shadow); }
+    .progress-inner{ height:100%; width:50%; background:var(--green); transition:width 0.6s ease; border-radius:10px; }
     .progress-expiry{ font-size:12px; color:var(--muted); min-width:90px; text-align:right; }
-
     .plan-row{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-weight:600; color:var(--muted); }
-
-    /* Subscribe button (only after expiry) */
-    .subscribe-btn{
-      margin-top:12px;
-      background:var(--green);
-      color:#fff;
-      padding:12px;
-      border-radius:12px;
-      font-weight:700;
-      border:0;
-      width:100%;
-      cursor:pointer;
-      display:none;
-    }
+    .subscribe-btn{ margin-top:12px; background:var(--green); color:#fff; padding:12px; border-radius:12px; font-weight:700; border:0; width:100%; cursor:pointer; display:none; }
     .subscribe-btn.visible{ display:block; }
-
-    /* Loyalty card style */
-    .loyalty{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-    }
+    .loyalty{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .loyalty-left{ font-weight:700; font-size:16px; color:var(--text); }
     .loyalty-right{ color:var(--green); font-weight:700; display:flex; gap:8px; align-items:center; }
-
-    /* Bottom grid 3 cards (styled as buttons) */
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:8px;
-      margin-top:8px;
-    }
-    button.gcard{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      background:var(--card);
-      border-radius:12px;
-      padding:10px;
-      text-align:center;
-      font-weight:700;
-      box-shadow:0 6px 18px var(--shadow);
-      position:relative;
-      cursor:pointer;
-      user-select:none;
-      border:0;
-      color:var(--text);
-    }
+    .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
+    button.gcard{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--card); border-radius:12px; padding:10px; text-align:center; font-weight:700; box-shadow:0 6px 18px var(--shadow); position:relative; cursor:pointer; user-select:none; border:0; color:var(--text); }
     button.gcard:active{ transform:translateY(1px); }
-    button.gcard .icon{
-      width:44px;height:44px;border-radius:10px;background:var(--header);display:inline-flex;align-items:center;justify-content:center;margin-bottom:0;color:#fff;font-weight:700;
-      box-shadow:0 6px 18px var(--shadow);
-    }
+    button.gcard .icon{ width:44px;height:44px;border-radius:10px;background:var(--header);display:inline-flex;align-items:center;justify-content:center;margin-bottom:0;color:#fff;font-weight:700; box-shadow:0 6px 18px var(--shadow); }
     .gcard .icon svg{ width:20px; height:20px; fill:#fff; }
+    .notify-dot{ position:absolute; right:10px; top:10px; width:10px;height:10px;border-radius:50%; background:var(--red); border:2px solid var(--card); }
 
-    .notify-dot{
-      position:absolute;
-      right:10px;
-      top:10px;
-      width:10px;height:10px;border-radius:50%;
-      background:var(--red);
-      border:2px solid var(--card);
-    }
-
-    /* CODE MODAL/OVERLAY (used for generate result) */
-    .code-modal {
-      position:fixed;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:94%;
-      max-width:380px;
-      background:var(--card);
-      border-radius:14px;
-      padding:14px;
-      box-shadow:0 12px 36px var(--shadow);
-      z-index:260;
-      display:none;
-      flex-direction:column;
-      gap:12px;
-    }
+    .code-modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:94%; max-width:380px; background:var(--card); border-radius:14px; padding:14px; box-shadow:0 12px 36px var(--shadow); z-index:260; display:none; flex-direction:column; gap:12px; }
     .code-modal.active { display:flex; }
-
-    .code-display{
-      background:#0b0b0b;
-      color:var(--text);
-      padding:16px 18px;
-      border-radius:12px;
-      font-size:22px;
-      font-weight:900;
-      letter-spacing:6px;
-      display:flex;
-      align-items:center;
-      gap:12px;
-      user-select:none; /* prevent manual selection */
-      touch-action:manipulation;
-      box-shadow:0 8px 24px var(--shadow);
-    }
+    .code-display{ background:#0b0b0b; color:var(--text); padding:16px 18px; border-radius:12px; font-size:22px; font-weight:900; letter-spacing:6px; display:flex; align-items:center; gap:12px; user-select:none; touch-action:manipulation; box-shadow:0 8px 24px var(--shadow); }
     .code-site-logo{ width:44px; height:28px; object-fit:contain; border-radius:6px; background:var(--card); padding:4px; }
-    .copy-btn{
-      background:var(--card);
-      color:var(--text);
-      border-radius:10px;
-      padding:8px;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
+    .copy-btn{ background:var(--card); color:var(--text); border-radius:10px; padding:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
 
-    /* small toast notifications */
-    .toast{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:84px;
-      background:#111214;
-      color:var(--text);
-      padding:10px 14px;
-      border-radius:10px;
-      box-shadow:0 8px 24px var(--shadow);
-      display:none;
-      z-index:90;
-      font-weight:600;
-    }
+    .toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:84px; background:#111214; color:var(--text); padding:10px 14px; border-radius:10px; box-shadow:0 8px 24px var(--shadow); display:none; z-index:90; font-weight:600; }
     .toast.show{ display:block; }
 
-    /* Loading overlay (used both at app start and on actions) */
-    .overlay{
-      position:fixed;
-      inset:0;
-      background:#000000; /* black fullscreen loader as required */
-      z-index:200;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      gap:14px;
-      color:#fff;
-    }
+    .overlay{ position:fixed; inset:0; background:#000000; z-index:200; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#fff; }
     .hidden{ display:none; }
 
-    /* initial loader logo animation
-       Changed to a gentle pulse + subtle spin animation for a more modern feel.
-       - slightly scales (pulse)
-       - small rotation swing
-       - fades opacity to add depth
-    */
-    .initial-logo{
-      width:120px;
-      height:120px;
-      object-fit:contain;
-      transform-origin:center;
-      will-change:transform, opacity;
-      animation:logoPulseSpin 1800ms ease-in-out infinite;
-    }
-    @keyframes logoPulseSpin {
-      0% {
-        transform: scale(0.92) rotate(0deg);
-        opacity: 0.75;
-        filter: drop-shadow(0 10px 22px rgba(0,0,0,0.55));
-      }
-      35% {
-        transform: scale(1.06) rotate(8deg);
-        opacity: 1;
-      }
-      65% {
-        transform: scale(1.02) rotate(-6deg);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(0.92) rotate(0deg);
-        opacity: 0.75;
-      }
-    }
-
-    .loader-spinner{
-      width:48px;height:48px;border-radius:50%;border:4px solid #ffffff;border-top-color:var(--gold);animation:spin 1s linear infinite;
-    }
+    .initial-logo{ width:120px; height:120px; object-fit:contain; transform-origin:center; will-change:transform, opacity; animation:logoPulseSpin 1800ms ease-in-out infinite; }
+    @keyframes logoPulseSpin { 0% { transform: scale(0.92) rotate(0deg); opacity: 0.75; filter: drop-shadow(0 10px 22px rgba(0,0,0,0.55)); } 35% { transform: scale(1.06) rotate(8deg); opacity: 1; } 65% { transform: scale(1.02) rotate(-6deg); opacity: 1; } 100% { transform: scale(0.92) rotate(0deg); opacity: 0.75; } }
+    .loader-spinner{ width:48px;height:48px;border-radius:50%;border:4px solid #ffffff;border-top-color:var(--gold);animation:spin 1s linear infinite; }
     @keyframes spin { to{ transform:rotate(360deg); } }
 
-    /* SETTINGS modal */
-    .modal{
-      position:fixed;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:92%;
-      max-width:360px;
-      background:var(--card);
-      border-radius:14px;
-      padding:14px;
-      box-shadow:0 12px 36px var(--shadow);
-      z-index:220;
-      display:none;
-    }
+    .modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:92%; max-width:360px; background:var(--card); border-radius:14px; padding:14px; box-shadow:0 12px 36px var(--shadow); z-index:220; display:none; }
     .modal.active{ display:block; }
-
-    .site-option{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      padding:10px;
-      border-radius:10px;
-      cursor:pointer;
-    }
+    .site-option{ display:flex; gap:12px; align-items:center; padding:10px; border-radius:10px; cursor:pointer; }
     .site-option img{ width:44px;height:28px; object-fit:contain; border-radius:6px; background:#0b0b0b;padding:4px;}
     .site-option.selected{ background:#101216; box-shadow:0 6px 18px var(--shadow); }
 
-    /* Profile page mimic (page four) */
-    .profile-page{
-      display:none;
-      position:fixed;
-      inset:0;
-      background:var(--bg);
-      z-index:80;
-      padding:14px;
-      box-sizing:border-box;
-      overflow:auto;
-    }
+    .profile-page{ display:none; position:fixed; inset:0; background:var(--bg); z-index:80; padding:14px; box-sizing:border-box; overflow:auto; }
     .profile-page.active{ display:block; }
+    .logout-btn{ margin-top:12px; background:var(--red); color:#fff; padding:12px; border-radius:12px; border:0; width:100%; font-weight:700; cursor:pointer; }
 
-    .logout-btn{
-      margin-top:12px;
-      background:var(--red);
-      color:#fff;
-      padding:12px;
-      border-radius:12px;
-      border:0;
-      width:100%;
-      font-weight:700;
-      cursor:pointer;
-    }
-
-    /* small responsive tweaks */
     @media (min-width:420px){
       .app{ border-radius:16px; overflow:hidden; box-shadow:0 12px 40px var(--shadow); margin-top:18px; }
       .footer-bar{ bottom:84px; }
@@ -598,23 +366,19 @@
     <!-- Main content area -->
     <main class="content" role="main" id="mainContent">
       <div class="iframe-card card" aria-hidden="false">
-        <iframe src="https://www.betclan.com/livescores/" title="Embedded content"></iframe>
+        <iframe src="https://www.betclan.com/livescores/" title="Livescores" scrolling="yes"></iframe>
       </div>
 
       <!-- Minimal preview shown even when logged in; dashboard is NOT auto-opened -->
       <div id="dashboardPreview" class="card" style="display:block;">
         <div class="top-row">
-          <div style="display:flex;gap:12px;align-items:center">
-            <div class="profile-ico"><img src="sportybet.png" alt="site" /></div>
-            <div>
-              <div style="font-weight:700">Welcome</div>
-              <div style="color:var(--muted)">Use the menu to access features</div>
-            </div>
-          </div>
+          <!-- image removed per request -->
           <div style="display:flex;gap:8px;align-items:center">
             <div style="font-size:12px;color:var(--muted)">Plan</div>
             <div style="font-weight:700">1 Month</div>
           </div>
+          <!-- show small referral summary in preview -->
+          <div id="dashboardReferralPreview" style="font-size:12px;color:var(--muted); align-self:center;">Referral: <span id="dashboardReferralCodePreview">--</span></div>
         </div>
       </div>
 
@@ -625,7 +389,6 @@
             <div style="display:flex;align-items:center;gap:12px;">
               <!-- Back-to-main button (distinct icon) -->
               <div class="back-btn" id="backToMainBtn" title="Back to Home" role="button" tabindex="0" aria-label="Back to main page">
-                <!-- left arrow inside circle for a clearer "back" control -->
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 13-4-4 4-4 1.4 1.4L10.8 10H17v2h-6.2l1.6 1.6L11 15z" fill="#fff"/></svg>
               </div>
 
@@ -633,6 +396,8 @@
               <div class="user-meta">
                 <div class="user-name" id="userName">User Name</div>
                 <div class="progress-title">Subscription Progress</div>
+                <!-- Dashboard referral display -->
+                <div id="dashboardReferral" style="font-size:13px;color:var(--muted);margin-top:6px;">Referral: <span id="dashboardReferralCode">--</span></div>
               </div>
             </div>
             <div class="icon-btn" id="openSettingsBtn" title="Settings" role="button" tabindex="0">
@@ -668,26 +433,17 @@
 
         <div class="grid">
           <button id="empireSocial" class="gcard" type="button" aria-label="Open EmpireSocial">
-            <div class="icon" aria-hidden="true">
-              <!-- stylized "ES" / bolt icon -->
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm1 14h-2v-2H9l3-6v4h2v4z"/></svg>
-            </div>
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm1 14h-2v-2H9l3-6v4h2v4z"/></svg></div>
             <div>EmpireSocial</div>
           </button>
 
           <button id="customerService" class="gcard" type="button" aria-label="Contact Customer Service">
-            <div class="icon" aria-hidden="true">
-              <!-- envelope icon -->
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.11 0-2 .89-2 2v12a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V6c0-1.11-.89-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
-            </div>
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.11 0-2 .89-2 2v12a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V6c0-1.11-.89-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
             <div>Customer Service</div>
           </button>
 
           <button id="notificationCenter" class="gcard" type="button" aria-label="Open Notification Center">
-            <div class="icon" aria-hidden="true">
-              <!-- bell / notification icon -->
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 1 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-            </div>
+            <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 1 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div>
             <div>Notification Center</div>
             <div class="notify-dot" aria-hidden="true"></div>
           </button>
@@ -705,12 +461,8 @@
         <button id="generateBtn" class="generate-btn">Generate Booking Code</button>
       </div>
       <div class="nav-right">
-        <!-- Profile icon should be an icon, not profile image -->
         <div class="profile-btn" id="openProfileBtn" title="Profile" role="button" tabindex="0">
-          <!-- simple person icon -->
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.866 0-7 3.134-7 7h2c0-2.761 2.239-5 5-5s5 2.239 5 5h2c0-3.866-3.134-7-7-7z" fill="#ffffff"/>
-          </svg>
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.866 0-7 3.134-7 7h2c0-2.761 2.239-5 5-5s5 2.239 5 5h2c0-3.866-3.134-7-7-7z" fill="#ffffff"/></svg>
         </div>
       </div>
     </nav>
@@ -734,7 +486,7 @@
       </div>
     </section>
 
-    <!-- CODE MODAL (shows booking code) - no "Open Site" button per request -->
+    <!-- CODE MODAL (shows booking code) -->
     <div id="codeModal" class="code-modal" aria-hidden="true">
       <div style="font-weight:700; font-size:16px;">Booking Code</div>
       <div class="code-display" id="codeModalDisplay">
@@ -758,6 +510,11 @@
             <div class="profile-ico"><img id="profileImgLarge" src="sportybet.png" alt="" /></div>
             <div style="font-weight:800; font-size:20px;" id="profileNameLarge">User Name</div>
             <div style="color:var(--muted)" id="profileSiteLarge">Site</div>
+
+            <!-- Referral display (code only) -->
+            <div id="profileReferral" style="margin-top:6px; color:var(--muted); font-size:13px;">
+              Referral: <span id="profileReferralCode">--</span>
+            </div>
           </div>
 
           <div style="margin-top:12px;">
@@ -772,7 +529,6 @@
               <div style="text-align:right;color:var(--muted);margin-top:6px;" id="profileExpiry">Expires: --</div>
             </div>
 
-            <!-- Added profile-visible subscribe button so expired users see CTA when profile is open -->
             <button id="profileSubscribeBtn" class="subscribe-btn">Subscribe — <svg style="vertical-align:middle" width="16" height="16" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.58 2 4 5.58 4 10c0 4.97 6.34 9.8 7.14 10.47.3.25.7.25 1 0C13.66 19.8 20 14.97 20 10c0-4.42-3.58-8-8-8zm1 11h-2V7h2v6z"/></svg></button>
 
           </div>
@@ -787,7 +543,7 @@
           <div style="font-weight:700;margin-bottom:8px;">Empire Loyalty</div>
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-weight:700">Empire Loyalty</div>
-            <button id="profileLoyaltyBtn" class="btn" style="background:var(--green);border:0;color=#fff;">Earn Rewards</button>
+            <button id="profileLoyaltyBtn" class="btn" style="background:var(--green);border:0;color:#fff;">Earn Rewards</button>
           </div>
         </div>
 
@@ -899,6 +655,11 @@
   const actionOverlayText = $('#actionOverlayText');
   const dashboardSection = $('#dashboard');
 
+  // Referral UI elements (code only)
+  const profileReferralCodeEl = $('#profileReferralCode');
+  const dashboardReferralCodeEl = $('#dashboardReferralCode');
+  const dashboardReferralCodePreviewEl = $('#dashboardReferralCodePreview');
+
   // New link elements
   const empireSocialEl = $('#empireSocial');
   const notificationCenterEl = $('#notificationCenter');
@@ -930,28 +691,28 @@
   const CUSTOMER_SERVICE_EMAIL = 'empirevirtual99@gmail.com';
   const CUSTOMER_SERVICE_MAILTO = 'mailto:' + CUSTOMER_SERVICE_EMAIL;
 
-  // USERS_MAP: single place to edit id and PIN together.
-  // Each key is "id|PIN" (edit here to add/edit PINs). Values are user metadata.
-  // PINs remain only inside these keys (not persisted anywhere).
+  // Referral base URL requested (base only)
+  const REFERRAL_BASE = 'https://empirestatebank.mssg.me/';
+
+  // USERS_MAP: single place to edit id, PIN and referral together.
+  // Each key is "id|PIN". Values are user metadata including referral code.
   const USERS_MAP = {
-    // Format: 'id|PIN': { name, site, expiration }
-    'daniel|2255':  { name: 'Daniel Johnson',  site: 'SportyBet', expiration: '2026-04-24T20:24:20Z' },
-    'michael|1789': { name: 'Michael James',  site: 'BetKing',   expiration: '2026-06-01T12:00:00Z' },
-    'samuel|3972':  { name: 'Samuel David',   site: 'Bet9ja',    expiration: '2026-05-15T08:30:00Z' }
+    // Format: 'id|PIN': { name, site, expiration, referral }
+    'daniel|2255':  { name: 'Daniel Johnson',  site: 'SportyBet', expiration: '2026-04-24T20:24:20Z', referral: 'DAN2255' },
+    'michael|1789': { name: 'Michael James',  site: 'BetKing',   expiration: '2026-06-01T12:00:00Z', referral: 'MIC1789' },
+    'samuel|3972':  { name: 'Samuel David',   site: 'Bet9ja',    expiration: '2026-05-15T08:30:00Z', referral: 'SAM3972' }
   };
 
   // In-memory users and session (NO localStorage; cleared on refresh)
-  // IN_MEMORY_USERS will be built from USERS_MAP but the user objects will NOT include the PIN.
   let IN_MEMORY_USERS = [];
   let IN_MEMORY_SESSION = null;
 
-  // Helpers for in-memory users/session (no persistence)
   function seedSampleUsersIfNeeded(){
-    // Build IN_MEMORY_USERS from USERS_MAP keys. PIN is kept only in USERS_MAP key.
+    // Build IN_MEMORY_USERS from USERS_MAP keys. Include referral.
     IN_MEMORY_USERS = Object.keys(USERS_MAP).map(k => {
       const [id] = k.split('|');
       const meta = USERS_MAP[k];
-      return { id, name: meta.name, site: meta.site, expiration: meta.expiration };
+      return { id, name: meta.name, site: meta.site, expiration: meta.expiration, referral: meta.referral || '' };
     });
   }
   function getUsers(){ return IN_MEMORY_USERS.slice(); } // return a shallow copy
@@ -1010,6 +771,11 @@
     // show generate button
     generateBtn.classList.add('visible');
 
+    // reflect referral on preview immediately
+    if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = user.referral || '--';
+    if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = user.referral || '--';
+    if(profileReferralCodeEl) profileReferralCodeEl.textContent = user.referral || '--';
+
     function updateHeaderPercent(){
       const { percent, remainingMs, expirationMs } = percentRemainingFromExpiration(user.expiration);
 
@@ -1062,6 +828,10 @@
     generateBtn.removeAttribute('disabled');
     if(profileSubscribeBtn){ profileSubscribeBtn.classList.remove('visible'); profileSubscribeBtn.style.display = 'none'; }
     if(headerProgressInterval) { clearInterval(headerProgressInterval); headerProgressInterval=null; }
+    // clear referral UI
+    if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = '--';
+    if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = '--';
+    if(profileReferralCodeEl) profileReferralCodeEl.textContent = '--';
   }
 
   // Login flow: do not open dashboard; just set session and header indicator
@@ -1089,7 +859,8 @@
 
     const [id] = foundKey.split('|');
     const meta = USERS_MAP[foundKey];
-    const found = { id, name: meta.name, site: meta.site, expiration: meta.expiration };
+    // include referral in the found object
+    const found = { id, name: meta.name, site: meta.site, expiration: meta.expiration, referral: meta.referral || '' };
 
     // Save session in-memory only (do NOT persist)
     saveSession(found.id);
@@ -1097,8 +868,11 @@
     setupAfterLogin(found);
     // update profile area (so when profile is opened it shows current data)
     profileNameLarge.textContent = found.name;
-    profileImgLarge.src = SITE_LOGOS[found.site] || 'AddText_04-11-12.53.52.png';
+    profileImgLarge.src = SITE_LOGOS[found.site] || 'empirestatebank.png';
     profileSiteLarge.textContent = found.site;
+    if(profileReferralCodeEl) profileReferralCodeEl.textContent = found.referral || '--';
+    if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = found.referral || '--';
+    if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = found.referral || '--';
     showToast('Welcome, ' + found.name);
   }
 
@@ -1138,7 +912,7 @@
     const display = codeModalValue;
     const full = final;
     display.textContent = ''.padEnd(full.length, ' ');
-    codeModalLogo.src = SITE_LOGOS[user.site] || 'AddText_04-11-12.53.52.png';
+    codeModalLogo.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
     codeModal.classList.add('active');
     codeModal.setAttribute('aria-hidden','false');
 
@@ -1250,8 +1024,9 @@
     if(!user){ showToast('Please login first'); return; }
     // populate profile page
     profileNameLarge.textContent = user.name;
-    profileImgLarge.src = SITE_LOGOS[user.site] || 'AddText_04-11-12.53.52.png';
+    profileImgLarge.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
     profileSiteLarge.textContent = user.site;
+    if(profileReferralCodeEl) profileReferralCodeEl.textContent = user.referral || '--';
     profilePage.classList.add('active');
     profilePage.setAttribute('aria-hidden','false');
     // update progress immediately
@@ -1300,10 +1075,15 @@
     openSettings();
   });
 
+  // Referral / Loyalty sharing — include detected referral code and base link automatically
   $('#profileLoyaltyBtn').addEventListener('click', async ()=>{
-    const msg = 'Get guaranteed football betting tips on EmpireStateBank. Use my referral code to join.';
+    const user = currentUser();
+    if(!user){ showToast('Please login first'); return; }
+    const code = user.referral || '';
+    // Per request: use the base link and include the code in the message exactly as specified
+    const msg = `Get guaranteed football betting tips on EmpireStateBank. Use my referral code ${code} and join here: ${REFERRAL_BASE}`;
     if(navigator.share){
-      try{ await navigator.share({ title:'Empire Loyalty', text: msg, url: location.href }); }
+      try{ await navigator.share({ title:'Empire Loyalty', text: msg, url: REFERRAL_BASE }); }
       catch(e){ showToast('Share canceled'); }
     } else {
       await reliableCopy(msg);
@@ -1386,9 +1166,6 @@
   }
 
   // SETTINGS handling:
-  // - openSettings shows modal
-  // - user selects site option (click or keyboard)
-  // - Confirm composes mailto to CUSTOMER_SERVICE_EMAIL with selected site
   let requestedSite = null;
   function openSettings(evt){
     if(evt && evt.stopPropagation) evt.stopPropagation();
@@ -1467,8 +1244,11 @@
     if(user){
       setupAfterLogin(user);
       profileNameLarge.textContent = user.name;
-      profileImgLarge.src = SITE_LOGOS[user.site] || 'AddText_04-11-12.53.52.png';
+      profileImgLarge.src = SITE_LOGOS[user.site] || 'empirestatebank.png';
       profileSiteLarge.textContent = user.site;
+      if(profileReferralCodeEl) profileReferralCodeEl.textContent = user.referral || '--';
+      if(dashboardReferralCodeEl) dashboardReferralCodeEl.textContent = user.referral || '--';
+      if(dashboardReferralCodePreviewEl) dashboardReferralCodePreviewEl.textContent = user.referral || '--';
     } else {
       teardownAfterLogout();
     }
